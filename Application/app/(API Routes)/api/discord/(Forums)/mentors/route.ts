@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export const POST = async (req: NextRequest) => {
-    const webhookUrl = `https://discord.com/api/webhooks/1458667755548049510/jcTsk7MysTN1wNFjNf4C-KDkLmqpUqSqkzwthlc_ABu73OHUMxDek7bXt7d9MBEuf8Y2?with_components=true&wait=false`;
+    const webhookUrl = `${process.env.DISCORD_WEBHOOK_URL}?with_components=true&wait=false`;
     if (!webhookUrl) {
         return new NextResponse("Webhook URL not configured", { status: 500 });
     }
