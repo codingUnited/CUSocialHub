@@ -42,3 +42,4 @@ next-env.d.ts
 
 # local operator files
 /operators/*.json
+.env*.local
