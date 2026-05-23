@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { makeCode } from "@/app/lib/encodeURL";
+import { makeCode } from "@/lib/encodeURL";
 
 
 function shortenInMarkdown(text: string) {
     // Flattened the regex onto a single line so it compiles correctly
     return text.replace(/\[(.*?)\]\((https?:\/\/.*?)\)/g, (match, label, url) => {
         const code = makeCode(url);
-        const short = `${process.env.NEXT_PUBLIC_BASE_URL}/r/${code}?u=${encodeURIComponent(url)}`;
+        const short = `${process.env.NEXT_PUBLIC_BASE_URL}/redirect/${code}?u=${encodeURIComponent(url)}`;
         return `[${label}](${short})`;
     });
 }
