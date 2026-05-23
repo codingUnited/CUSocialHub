@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export const POST = async (req: NextRequest) => {
-    const webhookUrl = `${process.env.DISCORD_WEBHOOK_URL}?with_components=true&wait=false`;
+    const webhookUrl = `${process.env.MENTORSLIST_WEBHOOK_URL}?with_components=true&wait=false`;
     if (!webhookUrl) {
         return new NextResponse("Webhook URL not configured", { status: 500 });
     }
     console.log("Webhook URL:", webhookUrl);
     const payload = {
-        username: "CodingUnited - Board of Mentor Reviews",
+        username: "CodingUnited - Board for Mentor Reviews",
         thread_id: null,
         thread_name: "test",
         content: "Hello from CUSocialHub!",

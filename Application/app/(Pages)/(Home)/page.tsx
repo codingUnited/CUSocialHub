@@ -2,7 +2,7 @@
 
 export default function Home() {
   const createDiscordThread = async () => {
-    const response = await fetch("/api/discord/mentors", {
+    const response = await fetch("/api/discord/resources", {
       method: "POST",
     });
     const text = await response.text();
