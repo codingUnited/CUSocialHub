@@ -13,8 +13,8 @@ export const POST = async (req: NextRequest) => {
         }
         const { url } = parsed.data;
         const { data, error } = await supabase
-            .from("shortlinks")
-            .insert({ url })
+            .from("CUSocialHub-ResourceLinks")
+            .insert({ redirect_url: url })
             .select("short_code")
             .single();
         if (error) {

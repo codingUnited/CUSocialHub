@@ -9,7 +9,7 @@ export async function GET(
     const { code } = await context.params;
     // Fetch the original URL
     const { data, error } = await supabase
-        .from("shortlinks")
+        .from("CUSocialHub-ResourceLinks")
         .select("redirect_url, visits")
         .eq("short_code", code)
         .single();
@@ -20,7 +20,7 @@ export async function GET(
 
     // Increment clicks + update last_clicked_at
     await supabase
-        .from("shortlinks")
+        .from("CUSocialHub-ResourceLinks")
         .update({
             visits: data.visits + 1,
             last_clicked_at: new Date().toISOString(),
