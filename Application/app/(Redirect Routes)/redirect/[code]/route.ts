@@ -3,10 +3,11 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
     request: NextRequest,
-    context: { params: Promise<{ code: string }> }
+    context: { params: Promise<{ nxtPcode: string }> }
 ) {
 
-    const { code } = await context.params;
+    const { nxtPcode } = await context.params;
+    const code = nxtPcode;
     // Fetch the original URL
     const { data, error } = await supabase
         .from("CUSocialHub-ResourceLinks")
