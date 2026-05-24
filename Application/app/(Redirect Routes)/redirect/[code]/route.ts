@@ -1,12 +1,12 @@
 import { supabase } from "@/lib/providers/supabase";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
-    req: Request,
-    { params }: { params: { code: string } }
+    request: NextRequest,
+    context: { params: Promise<{ code: string }> }
 ) {
-    const { code } = params;
 
+    const { code } = await context.params;
     // Fetch the original URL
     const { data, error } = await supabase
         .from("shortlinks")
