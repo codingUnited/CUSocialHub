@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { makeCode } from "@/lib/encodeURL";
-import { supabase } from "@/lib//providers/supabase";
-import { ShortenSchema } from "@/lib/schemas/shorten";
+import { makeCode } from "@/app/lib/encodeURL";
+import { supabase } from "@/app/lib/providers/supabase";
+import { ShortenSchema } from "@/app/lib/schemas/shorten";
 
 
 export const POST = async (req: NextRequest) => {

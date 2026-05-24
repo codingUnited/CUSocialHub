@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { supabase } from "@/lib/providers/supabase";
-import { makeCode } from "@/lib/encodeURL";
+import { supabase } from "@/app/lib/providers/supabase";
+import { makeCode } from "@/app/lib/encodeURL";
 
 async function getOrCreateShortLink(url: string) {
     const code = makeCode(url);
