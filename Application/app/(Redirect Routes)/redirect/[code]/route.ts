@@ -1,11 +1,31 @@
-import { NextRequest, NextResponse } from "next/server";
+import { supabase } from "@/lib/providers/supabase";
+import { NextResponse } from "next/server";
 
-export async function GET(request: NextRequest, context: any) {
-    const url = request.nextUrl.searchParams.get("u");
+export async function GET(
+    req: Request,
+    { params }: { params: { code: string } }
+) {
+    const { code } = params;
 
-    if (!url) {
-        return new NextResponse("Invalid short link", { status: 400 });
+    // Fetch the original URL
+    const { data, error } = await supabase
+        .from("shortlinks")
+        .select("redirect_url, visits")
+        .eq("short_code", code)
+        .single();
+
+    if (error || !data) {
+        return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    return NextResponse.redirect(url);
+    // Increment clicks + update last_clicked_at
+    await supabase
+        .from("shortlinks")
+        .update({
+            visits: data.visits + 1,
+            last_clicked_at: new Date().toISOString(),
+        })
+        .eq("short_code", code);
+
+    return NextResponse.redirect(data.url);
 }
