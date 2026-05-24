@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { makeCode } from "@/lib/encodeURL";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib//providers/supabase";
 import { ShortenSchema } from "@/lib/schemas/shorten";
 
 
