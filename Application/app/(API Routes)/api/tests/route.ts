@@ -1,17 +1,36 @@
 // regex-test.ts
 
-import { makeCode } from "@/lib/encodeURL";
+import { makeCode } from "@/app/lib/encodeURL";
 
+const BASE = "https://cusocialhub.vercel.app";
+
+
+function shortenRawUrls(text: string) {
+    return text.replace(/https?:\/\/\S+/g, (url) => {
+        const code = makeCode(url);
+        return `${BASE}/redirect/${code}?u=${encodeURIComponent(url)}`;
+    });
+}
 
 function shortenInMarkdown(text: string) {
     // Single-line regex to prevent syntax errors and ensure accurate matching
-    return text.replace(/\[(.*?)\]\((https?:\/\/.*?)\)/g, (match, label, url) => {
+    let out = text.replace(/\[(.*?)\]\((https?:\/\/.*?)\)/g, (match, label, url) => {
         const code = makeCode(url);
         const short = `${process.env.NEXT_PUBLIC_BASE_URL}/redirect/${code}?u=${encodeURIComponent(url)}`;
         return `[${label}](${short})`;
     });
+
+    out = shortenRawUrls(out);
+
+    return out;
 }
 
+// function shortenRawUrls(text: string) {
+//     return text.replace(/https?:\/\/\S+/g, (url) => {
+//         const code = makeCode(url);
+//         return `${process.env.NEXT_PUBLIC_BASE_URL}/redirect/${code}?u=${encodeURIComponent(url)}`;
+//     });
+// }
 
 
 
