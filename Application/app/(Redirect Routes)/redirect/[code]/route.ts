@@ -27,5 +27,5 @@ export async function GET(
         })
         .eq("short_code", code);
 
-    return NextResponse.redirect(data.url);
+    return NextResponse.redirect(data.redirect_url);
 }
