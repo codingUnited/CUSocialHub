@@ -5,5 +5,5 @@ export function makeCode(url: string) {
         .createHash("sha256")
         .update(url)
         .digest("base64url")
-        .slice(0, 8); // short, stable code
+        .slice(0, 4); // short, stable code
 }

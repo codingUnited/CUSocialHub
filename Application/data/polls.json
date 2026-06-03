@@ -1,0 +1,27 @@
+[
+  {
+    "id": "4e4a6ab2-0bd4-41f7-b1ce-1fe66a194d5c",
+    "title": "Cool Poll",
+    "description": "Cool Description",
+    "options": [
+      {
+        "id": "opt-1",
+        "label": "This is cool",
+        "votes": 23
+      },
+      {
+        "id": "opt-2",
+        "label": "This is lame",
+        "votes": 21
+      },
+      {
+        "id": "opt-3",
+        "label": "this is awesome",
+        "votes": 53
+      }
+    ],
+    "startDate": "2026-06-03T07:19:53.374Z",
+    "endDate": "2026-06-03T08:19:53.374Z",
+    "status": "closed"
+  }
+]

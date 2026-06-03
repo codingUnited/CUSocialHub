@@ -177,26 +177,81 @@ export const POST = async (req: NextRequest) => {
                 console.error(`[${Resource}] Error in jsonToEmbedFields:`, err);
                 continue; // skip to next language
             }
+            // Build header embed (title, logo)
+            const headerEmbed = {
+                title: jsonData.Title,
+                description: "",
+                thumbnail: {
+                    url: jsonData.Logo,
+                    height: 500,
+                    width: 500
+                }
+            };
+            // 1. Add Overview (string, not in embedFields)
+            if (jsonData.Overview) {
+                headerEmbed.description += `**Overview**\n${jsonData.Overview}\n\n`;
+            }
+
+            // 2. Add Key Features (field named "Key Features")
+            const keyFeatures = embedFields.find(f => f.name.toLowerCase().includes("feature"));
+            if (keyFeatures) {
+                headerEmbed.description += `**${keyFeatures.name}**\n${keyFeatures.value}\n\n`;
+            }
+
+            // 3. Add Syntax (if it exists)
+            const syntax = embedFields.find(f => f.name.toLowerCase().includes("syntax"));
+            if (syntax) {
+                headerEmbed.description += `**${syntax.name}**\n${syntax.value}\n\n`;
+            }
+
+            // 4. Remove the fields we already used
+            const usedNames = new Set([
+                keyFeatures?.name,
+                syntax?.name
+            ]);
+
+            const remaining = embedFields.filter(f => !usedNames.has(f.name));
+
+            // 5. Convert remaining fields into separate embeds
+            const sectionEmbeds = remaining.map(field => ({
+                description: `**${field.name}**\n${field.value}`
+            }));
+
+            // Final embed list
+            const embeds = [headerEmbed, ...sectionEmbeds];
+            // DEBUG: Log each embed size individually
+            console.log("===== EMBED SIZE DEBUG =====");
+
+            embeds.forEach((embed, index) => {
+                const embedJson = JSON.stringify(embed);
+                const descLength = embed.description?.length || 0;
+
+                console.log(
+                    `Embed #${index + 1}: total JSON chars = ${embedJson.length}, description chars = ${descLength}`
+                );
+
+                if (embedJson.length > 6000) {
+                    console.warn(`⚠️ WARNING: Embed #${index + 1} exceeds 6000 chars!`);
+                }
+            });
+
+            console.log("===== END EMBED SIZE DEBUG =====");
             const payload = {
                 username: "CU - Code Space Resource Curator",
                 //update with placeholder image URL from raw github
 
                 thread_name: `${jsonData.Title} Language Resources`,
                 applied_tags: ["1458332329000046767", "1458898795050831973", "1458894820381556959", "1505036337823088710", "1505036419062698106"], // Example tag ID
-                content: jsonData.Overview,
+                content: null,
 
-                embeds: [
-                    {
-                        thumbnail: {
-                            url: `${jsonData.Logo}`,
-                            height: 500,
-                            width: 500
-                        }, fields: embedFields
-                    },
-                ],
+                embeds: embeds
             };
             // 4. Send to Discord
             try {
+                // Count total characters in the embed payload
+                const payloadString = JSON.stringify(payload);
+                console.log("TOTAL EMBED CHAR COUNT:", payloadString.length);
+
                 const response = await fetch(webhookUrl, {
                     method: "POST",
                     headers: {

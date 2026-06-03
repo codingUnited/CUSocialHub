@@ -1,32 +1,64 @@
 "use client";
 
+import { Button, Card, Container, Field, HStack, Input, Stack } from "@chakra-ui/react/";
+
 export default function Home() {
-  const createDiscordThread = async () => {
-    const response = await fetch("/api/discord/resources", {
-      method: "POST",
-    });
-    const text = await response.text();
-    alert(text);
-  };
+
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To send create a thread on Discord, press the button below.
-          </h1>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <button
-            // className={"mt-4 rounded-full bg-blue-600 px-6 py-3 text-white hover:bg-blue-700 "}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            onClick={createDiscordThread}
-          >
-            Send Message to Discord
-          </button>
-        </div>
-      </main>
-    </div>
+    <Container maxW="md" py="12">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          console.log("Form submitted!")
+        }}
+      >
+        <Card.Root>
+          <Card.Header>
+            <Card.Title textStyle="2xl">Create an Account</Card.Title>
+            <Card.Description>
+              Fill in the form below to get started.
+            </Card.Description>
+          </Card.Header>
+
+          <Card.Body>
+            <Stack gap="5" w="full">
+              {/* Side-by-side fields for Name */}
+              <HStack gap="4">
+                <Field.Root required>
+                  <Field.Label>First Name</Field.Label>
+                  <Input name="firstName" placeholder="Jane" />
+                </Field.Root>
+                <Field.Root required>
+                  <Field.Label>Last Name</Field.Label>
+                  <Input name="lastName" placeholder="Doe" />
+                </Field.Root>
+              </HStack>
+
+              {/* Full width field for Email */}
+              <Field.Root required>
+                <Field.Label>Email Address</Field.Label>
+                <Input name="email" type="email" placeholder="jane@example.com" />
+              </Field.Root>
+
+              {/* Full width field for Password with Helper Text */}
+              <Field.Root required>
+                <Field.Label>Password</Field.Label>
+                <Input name="password" type="password" placeholder="••••••••" />
+                <Field.HelperText>Must be at least 8 characters long.</Field.HelperText>
+              </Field.Root>
+            </Stack>
+          </Card.Body>
+
+          <Card.Footer justifyContent="flex-end" gap="3">
+            <Button variant="outline">Cancel</Button>
+            <Button variant="solid" colorPalette="blue" type="submit">
+              Sign Up
+            </Button>
+          </Card.Footer>
+        </Card.Root>
+      </form>
+    </Container>
+
   );
 }
