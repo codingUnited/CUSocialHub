@@ -10,6 +10,8 @@ export class PollBuilder {
     private startDate: Date = new Date();
     private endDate: Date = new Date();
     private status?: "scheduled" | "open" | "closed";
+    private allowUserOptions = false;
+    private timezone = "UTC";
 
     withId(id: string) {
         this.id = id;
@@ -41,6 +43,16 @@ export class PollBuilder {
         return this;
     }
 
+    withAllowUserOptions(allow: boolean) {
+        this.allowUserOptions = allow;
+        return this;
+    }
+
+    withTimezone(timezone: string) {
+        this.timezone = timezone;
+        return this;
+    }
+
 
     build(): PollInput {
         if (!this.id || !this.title) {
@@ -48,14 +60,23 @@ export class PollBuilder {
         }
 
         const now = new Date();
+
+        const formattedOptions = this.options.map((label, index) => ({
+            id: `opt_${index}_${Date.now()}`,
+            label: label,
+            votes: 0
+        }));
+
         return {
             id: this.id,
             title: this.title,
             description: this.description,
-            options: this.options,
+            options: formattedOptions,
             startDate: this.startDate,
             endDate: this.endDate,
-            status: this.startDate <= now ? "open" : "scheduled"
+            status: this.startDate <= now ? "open" : "scheduled",
+            allowUserOptions: this.allowUserOptions,
+            timezone: this.timezone
         };
     }
 }
