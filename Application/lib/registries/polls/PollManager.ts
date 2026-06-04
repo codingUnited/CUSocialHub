@@ -182,11 +182,7 @@ export class PollManager {
             throw new Error(`Poll with id "${input.id}" already exists.`);
         }
 
-        const options = input.options.map((label, index) => ({
-            id: `opt-${index + 1}`,
-            label,
-            votes: 0
-        }));
+        const options = input.options;
 
         const poll = new Poll(
             input.id,
@@ -195,7 +191,9 @@ export class PollManager {
             options,
             input.startDate,
             input.endDate,
-            input.status
+            input.status,
+            input.allowUserOptions,
+            input.timezone
         );
 
         this.polls.set(poll.id, poll);
@@ -214,14 +212,13 @@ export class PollManager {
         if (updates.endDate) poll.endDate = new Date(updates.endDate);
         if (updates.status) poll.status = updates.status;
         if (updates.options) {
-            poll.options = updates.options.map((label, index) => {
+            poll.options = updates.options.map((opt, index) => {
                 // Look to see if this option label already existed in the poll
-                const existingOption = poll.options.find(o => o.label === label);
-
+                const existing = poll.options.find(o => o.label === opt.label);
                 return {
                     id: `opt-${index + 1}`,
-                    label,
-                    votes: existingOption ? existingOption.votes : 0 // Preserve historical votes!
+                    label: opt.label,
+                    votes: existing ? existing.votes : opt.votes ?? 0 // Preserve historical votes!
                 };
             });
         }
@@ -254,6 +251,62 @@ export class PollManager {
         this.save();
         return poll;
     }
+
+    async addUserOption(pollId: string, option: string) {
+        const poll = await this.getPollById(pollId);
+        if (!poll) throw new Error("Poll not found");
+
+        if (poll.status !== "open") {
+            throw new Error("Poll is not active");
+        }
+
+        if (!poll.allowUserOptions) {
+            throw new Error("User-added options are disabled");
+        }
+
+        const normalized = option.trim();
+        if (!normalized) throw new Error("Option cannot be empty");
+
+        if (poll.options.some(o => o.label === normalized)) {
+            throw new Error("This option already exists");
+        }
+
+        poll.options.push({ id: crypto.randomUUID(), label: normalized, votes: 0 });
+        await this.updatePoll(pollId, { options: poll.options });
+
+        return poll;
+    }
+
+    async addOption(id: string, label: string) {
+        const poll = this.polls.get(id);
+        if (!poll) throw new Error("Poll not found");
+
+        if (!poll.allowUserOptions) {
+            throw new Error("User-added options are disabled for this poll.");
+        }
+
+        const normalized = label.trim().toLowerCase();
+
+        // 🚫 Prevent duplicates
+        const exists = poll.options.some(
+            (opt) => opt.label.trim().toLowerCase() === normalized
+        );
+
+        if (exists) {
+            throw new Error("This option already exists in the poll.");
+        }
+
+        poll.options.push({
+            id: `opt-${poll.options.length + 1}`,
+            label: label.trim(),
+            votes: 0
+        });
+
+        this.save();
+        return poll;
+    }
+
+
 
     async closePoll(pollId: PollId) {
         this.reload();

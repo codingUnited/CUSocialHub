@@ -20,6 +20,8 @@ export interface PollData {
     startDate: string; // ISO string in JSON
     endDate: string;   // ISO string in JSON
     status: PollStatus;
+    allowUserOptions: boolean;
+    timezone: string;
 }
 
 // Input when creating a poll
@@ -27,20 +29,24 @@ export interface PollInput {
     id: PollId;
     title: string;
     description: string;
-    options: string[]; // labels only — PollManager converts to PollOption[]
+    options: PollOption[]; // labels only — PollManager converts to PollOption[]
     startDate: Date;
     endDate: Date;
     status?: PollStatus; // Optional, defaults to "scheduled"
+    allowUserOptions: boolean;
+    timezone: string;
 }
 
 // Partial update
 export interface PollUpdate {
     title?: string;
     description?: string;
-    options?: string[];
+    options?: PollOption[];
     startDate?: Date;
     endDate?: Date;
     status?: PollStatus;
+    allowUserOptions?: boolean;
+    timezone?: string;
 }
 
 // For AM/PM date builder

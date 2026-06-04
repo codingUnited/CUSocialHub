@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PollManager } from "@/lib/registries/polls/PollManager";
 
+
+
 const manager = new PollManager();
 
 
@@ -14,6 +16,15 @@ export async function GET() {
 
 // Create a new poll
 export async function POST(req: NextRequest) {
+    const { key } = await req.json();
+
+    if (key !== process.env.POLL_CREATION_KEY) {
+        return NextResponse.json(
+            { success: false, error: "Unauthorized poll creation." },
+            { status: 403 }
+        );
+    }
+
     const body = await req.json();
     const created = await manager.createPoll(body);
     return NextResponse.json(created, { status: 201 });

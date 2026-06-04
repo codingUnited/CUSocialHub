@@ -8,6 +8,9 @@ export class Poll {
     startDate: Date;
     endDate: Date;
     status: PollStatus;
+    allowUserOptions: boolean;
+    timezone: string;
+
 
     constructor(
         id: string,
@@ -16,7 +19,11 @@ export class Poll {
         options: PollOption[],
         startDate: Date,
         endDate: Date,
-        status: PollStatus = "scheduled"
+        status: PollStatus = "scheduled",
+        allowUserOptions: boolean = true,
+        timezone: string = "UTC"
+
+
     ) {
 
         this.id = id;
@@ -26,5 +33,8 @@ export class Poll {
         this.startDate = startDate;
         this.endDate = endDate;
         this.status = status;
+        this.allowUserOptions = allowUserOptions;
+        this.timezone = timezone;
+
     }
 }

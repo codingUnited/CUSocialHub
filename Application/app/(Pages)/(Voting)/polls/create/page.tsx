@@ -15,11 +15,29 @@ export default function CreatePollPage() {
     const [description, setDescription] = useState("");
     const [options, setOptions] = useState("");
     const [durationMinutes, setDurationMinutes] = useState("60");
+    const [allowUserOptions, setAllowUserOptions] = useState(false);
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+
+
+
 
     async function createPoll() {
-        const start = new Date();
-        const durationNum = parseInt(durationMinutes, 10) || 60;
-        const end = new Date(start.getTime() + durationNum * 60 * 1000);
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+            alert("Please select valid start and end dates.");
+            return;
+        }
+
+        if (end <= start) {
+            alert("End date must be after start date.");
+            return;
+        }
+
 
         await fetch("/api/polls", {
             method: "POST",
@@ -28,9 +46,15 @@ export default function CreatePollPage() {
                 id: crypto.randomUUID(),
                 title,
                 description,
-                options: options.split(",").map(o => o.trim()),
+                options: options.split(",").map((label, index) => ({
+                    id: `opt-${index + 1}`,
+                    label: label.trim(),
+                    votes: 0
+                })),
                 startDate: start,
-                endDate: end
+                endDate: end,
+                allowUserOptions,
+                timezone
             })
         });
 
@@ -69,23 +93,38 @@ export default function CreatePollPage() {
                 />
                 <Field.HelperText>Separate options with a comma.</Field.HelperText>
             </Field.Root>
+            <Field.Root>
+                <Field.Label>Allow Users to Add Options?</Field.Label>
+                <input
+                    type="checkbox"
+                    checked={allowUserOptions}
+                    onChange={(e) => setAllowUserOptions(e.target.checked)}
+                />
+                <Field.HelperText>
+                    If enabled, users can add their own options while the poll is active.
+                </Field.HelperText>
+            </Field.Root>
+
 
             {/* Native NumberInput Structure */}
             <Field.Root>
-                <Field.Label>Duration (Minutes)</Field.Label>
-                <NumberInput.Root
-                    value={durationMinutes}
-                    onValueChange={(e) => setDurationMinutes(e.value)}
-                    min={1}
-                    width="full"
-                >
-                    <NumberInput.Control>
-                        <NumberInput.IncrementTrigger />
-                        <NumberInput.DecrementTrigger />
-                    </NumberInput.Control>
-                    <NumberInput.Input placeholder="Duration in minutes" />
-                </NumberInput.Root>
+                <Field.Label>Start Date & Time</Field.Label>
+                <Input
+                    type="datetime-local"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                />
             </Field.Root>
+
+            <Field.Root>
+                <Field.Label>End Date & Time</Field.Label>
+                <Input
+                    type="datetime-local"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                />
+            </Field.Root>
+
 
             <Button colorPalette="green" onClick={createPoll}>
                 Create Poll
