@@ -1,15 +1,17 @@
 import { z } from "zod";
 
 export const ALLOWED_STREAMING_PREFIXES = [
-    "https://www.hbomax.com/movies/",
-    "https://www.hulu.com/hub/movies/",
-    "https://www.peacocktv.com/stream/movies/",
-    "https://www.netflix.com/title",
+    "https://www.hbomax.com/movies/", 
+    "https://www.hulu.com/movie/",
+    "https://www.peacocktv.com/watch/asset/movies/",
+    "https://www.peacocktv.com/watch-online/movies/",
+    "https://www.netflix.com/title/",
     "https://movies.disney.com/",
+    "https://www.disneyplus.com/browse",
     "https://www.amazon.com/gp/video/movie",
-    "https://www.paramountplus.com/movies/"
+    "https://www.paramountplus.com/movies/video/",
+    "https://tv.apple.com/us/movie/"
 ];
-
 export const StreamingLinkSchema = z
     .url("Must be a valid URL.")
     .refine(

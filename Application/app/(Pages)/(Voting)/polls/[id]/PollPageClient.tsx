@@ -9,80 +9,82 @@ import {
     Container,
     Heading,
     Presence,
-    Progress,
     Stack,
-    Text
+    Text,
+    Input,
+    CheckboxCard,
+    CheckboxGroup
 } from "@chakra-ui/react";
+import { PollOption } from "@/lib/registries/polls/PollTypes";
+
+interface PollPageClientProps {
+    id: string;
+}
 
 export default function PollPageClient({ id }: { id: string }) {
     const [poll, setPoll] = useState<any>(null);
-    const [newOption, setNewOption] = useState("");
     const [error, setError] = useState("");
     const [newTitle, setNewTitle] = useState("");
     const [newLink, setNewLink] = useState("");
-    const [links, setLinks] = useState<Record<string, string>>({});
+    const [localVoted, setLocalVoted] = useState<Record<string, boolean>>({});
+    const [selected, setSelected] = useState<string[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-
-    // Store readable titles locally (keyed by option.label)
-    const [titles, setTitles] = useState<Record<string, string>>({});
-
+    // Primary polling data fetcher
     async function loadPoll() {
-        const res = await fetch(`/api/polls/${id}`, { cache: "no-store" });
-        const data = await res.json();
-        setPoll(data);
+        try {
+            const res = await fetch(`/api/polls/${id}`, { cache: "no-store" });
+            const data = await res.json();
+            setPoll(data);
+        } catch (err) {
+            console.error("Failed to fetch poll:", err);
+        }
     }
-    async function vote(optionId: string) {
-        await fetch(`/api/polls/${id}/vote`, {
-            method: "POST",
-            cache: "no-store",
-            body: JSON.stringify({ optionId }),
-            headers: { "Content-Type": "application/json" }
-        });
-        loadPoll();
-    }
+
     async function handleAddOption() {
         setError("");
+        if (!newTitle.trim()) {
+            setError("Title is required");
+            return;
+        }
 
         const platform = detectPlatform(newLink);
         const finalTitle = `${newTitle} | ${platform}`;
 
-        const res = await fetch(`/api/polls/${id}/add-option`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                title: finalTitle,
-                link: newLink
-            })
-        });
+        try {
+            const res = await fetch(`/api/polls/${id}/add-option`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    title: finalTitle,
+                    link: newLink
+                })
+            });
 
-        const data = await res.json();
-        if (data.link) {
-            setLinks(prev => ({
-                ...prev,
-                [finalTitle]: data.link
-            }));
+            const data = await res.json();
+
+            if (!data.success) {
+                setError(data.error || "Failed to add option");
+                return;
+            }
+
+            setNewTitle("");
+            setNewLink("");
+            loadPoll();
+        } catch (err) {
+            setError("Network error adding option.");
         }
-
-
-        if (!data.success) {
-            setError(data.error);
-            return;
-        }
-
-        setNewTitle("");
-        setNewLink("");
-        loadPoll();
     }
 
-
     useEffect(() => {
-        loadPoll(); // initial load
+        loadPoll(); // Initial layout load
         const interval = setInterval(() => {
             loadPoll();
-        }, 2000); // every 2 seconds
+        }, 2000); // Check for updates every 2 seconds
 
         return () => clearInterval(interval);
     }, [id]);
+
     if (!poll) {
         return (
             <Container maxW="md" py="12">
@@ -90,24 +92,71 @@ export default function PollPageClient({ id }: { id: string }) {
             </Container>
         );
     }
-    // LOCAL TIME CHECK
+
     const now = new Date();
     const start = new Date(poll.startDate);
     const end = new Date(poll.endDate);
     const isActive = now >= start && now <= end && poll.status === "open";
+
     const totalVotes = Array.isArray(poll.options)
-        ? poll.options.reduce((sum, o) => sum + o.votes, 0)
+        ? poll.options.reduce((sum: number, o: PollOption) => sum + o.votes, 0)
         : 0;
 
-    const formatter = new Intl.DateTimeFormat("en-US", {
-        timeZone: poll.timezone,
-        dateStyle: "medium",
-        timeStyle: "short"
-    });
+    function hasVoted(pollId: string, optionId: string) {
+        if (typeof window === "undefined") return false;
+        const cookieKey = `poll_${pollId}_option_${optionId}=true`;
+        return document.cookie.includes(cookieKey);
+    }
+
+    function toggleOption(optionId: string) {
+        setSelected((prev) =>
+            prev.includes(optionId)
+                ? prev.filter((item) => item !== optionId)
+                : [...prev, optionId]
+        );
+    }
+
+    // Determine which selections are valid to accept votes
+    const selectableOptions = selected.filter(
+        (optionId) => !hasVoted(poll.id, optionId) && !localVoted[optionId]
+    );
+
+    // FIXED: Executes all network vote distributions at the exact same time cleanly
+    async function castVotes() {
+        if (selectableOptions.length === 0) return;
+        setIsSubmitting(true);
+
+        // Instantly switch UI buttons into a local processing lock-state 
+        const updatedVotes = { ...localVoted };
+        selectableOptions.forEach(id => { updatedVotes[id] = true; });
+        setLocalVoted(updatedVotes);
+
+        try {
+            const votePromises = selectableOptions.map((optionId) =>
+                fetch(`/api/polls/${poll.id}/vote`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ optionId }),
+                })
+            );
+
+            // Wait until every single vote request is fulfilled concurrently
+            await Promise.all(votePromises);
+            setSelected([]);
+            await loadPoll();
+        } catch (err) {
+            alert("An error occurred while saving your votes. Please check connection.");
+            // Revert local UI locks if failure occurs
+            const rolledBackVotes = { ...localVoted };
+            selectableOptions.forEach(id => { rolledBackVotes[id] = false; });
+            setLocalVoted(rolledBackVotes);
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
 
     function detectPlatform(url: string): string {
         const u = url.toLowerCase();
-
         if (u.includes("netflix.com")) return "Netflix";
         if (u.includes("hulu.com")) return "Hulu";
         if (u.includes("hbomax.com") || u.includes("max.com")) return "HBO Max";
@@ -115,119 +164,142 @@ export default function PollPageClient({ id }: { id: string }) {
         if (u.includes("amazon.com")) return "Prime Video";
         if (u.includes("paramountplus.com")) return "Paramount+";
         if (u.includes("peacocktv.com")) return "Peacock";
-
         return "Streaming";
     }
 
     return (
         <Container maxW="md" py="12">
-            {/* Replaced Fade with the v3 Presence component [1] */}
             <Presence
                 present={true}
                 animationName={{ _open: "fade-in", _closed: "fade-out" }}
                 animationDuration="moderate"
             >
                 <Card.Root p="6" shadow="lg" borderRadius="xl">
-                    {/* Replaced spacing with gap [2] */}
-                    <Stack gap="5">
-                        <Box>
-                            <Heading size="lg">{poll.title}</Heading>
-                            <Text mt="2" color="fg.muted">{poll.description}</Text>
+                    <Card.Body>
+                        <Stack gap="5">
+                            <Box>
+                                <Heading size="lg">{poll.title}</Heading>
+                                <Text mt="2" color="fg.muted">{poll.description}</Text>
 
-                            {/* Replaced colorScheme with colorPalette [2] */}
-                            <Badge
-                                mt="3"
-                                px="3"
-                                py="1"
-                                borderRadius="md"
-                                colorPalette={isActive ? "green" : "red"}
-                                fontSize="sm"
-                            >
-                                {isActive ? "Active Now" : "Not Active"}
-                            </Badge>
-                        </Box>
+                                <Badge
+                                    mt="3"
+                                    px="3"
+                                    py="1"
+                                    borderRadius="md"
+                                    colorPalette={isActive ? "green" : "red"}
+                                    fontSize="sm"
+                                >
+                                    {isActive ? "Active Now" : "Not Active"}
+                                </Badge>
+                            </Box>
 
-                        <Stack gap="4">
-                            {poll.options.map((opt: any) => {
-                                const percent = totalVotes === 0
-                                    ? 0
-                                    : Math.round((opt.votes / totalVotes) * 100);
+                            {/* INTEGRATED THE CORRECTED CHECKBOX CARD ARCHITECTURE */}
+                            <CheckboxGroup disabled={!isActive || isSubmitting}>
+                                <Stack gap="2" width="100%">
+                                    {Array.isArray(poll.options) && poll.options.map((o: PollOption) => {
+                                        const voted = hasVoted(poll.id, o.id) || localVoted[o.id];
+                                        const isSelected = selected.includes(o.id);
 
-                                // Use readable title if we have it
-                                const displayTitle =
-                                    titles[opt.label] ??
-                                    opt.label;
-                                return (
-                                    <Box key={opt.id}>
-                                        <Button
-                                            w="full"
-                                            justifyContent="space-between"
-                                            variant={isActive ? "solid" : "outline"}
-                                            colorPalette="blue"
-                                            onClick={() => isActive && vote(opt.id)}
-                                            disabled={!isActive} // Replaced isDisabled [3]
-                                        >
-                                            <span>{displayTitle}</span>
-                                            <span>{opt.votes} votes</span>
-                                        </Button>
-                                        <a href={links[opt.label]} target="_blank" rel="noopener noreferrer">
-                                            View Movie
-                                        </a>
+                                        return (
+                                            <CheckboxCard.Root
+                                                key={o.id}
+                                                value={o.id}
+                                                disabled={voted || !isActive || isSubmitting}
+                                                checked={isSelected || voted}
+                                                onCheckedChange={() => toggleOption(o.id)}
+                                                colorPalette={voted ? "green" : "blue"}
+                                                size="sm"
+                                                width="100%"
+                                                variant="subtle"
+                                                borderRadius="md"
+                                                opacity={voted ? 0.8 : 1}
+                                                bg={voted ? "green.subtle" : isSelected ? "blue.subtle" : "transparent"}
+                                                borderColor={voted ? "green.solid" : isSelected ? "blue.solid" : "border.subtle"}
+                                                _hover={!voted && isActive ? { bg: "bg.muted/50" } : {}}
+                                                transition="all 0.15s ease"
+                                            >
+                                                <CheckboxCard.HiddenInput />
 
+                                                <CheckboxCard.Control
+                                                    p="2"
+                                                    display="flex"
+                                                    alignItems="center"
+                                                    justifyContent="space-between"
+                                                    width="100%"
+                                                    gap="3"
+                                                >
+                                                    <CheckboxCard.Content flex="1">
+                                                        <CheckboxCard.Label
+                                                            fontSize="sm"
+                                                            fontWeight={isSelected ? "semibold" : "normal"}
+                                                            color={voted ? "green.fg" : isSelected ? "blue.fg" : "fg"}
+                                                        >
+                                                            {o.label}
+                                                        </CheckboxCard.Label>
+                                                    </CheckboxCard.Content>
 
+                                                    <Box display="flex" alignItems="center" gap="2.5">
+                                                        {voted && (
+                                                            <Badge colorPalette="green" variant="subtle" size="sm" px="1.5">
+                                                                Voted
+                                                            </Badge>
+                                                        )}
+                                                        <CheckboxCard.Indicator />
+                                                    </Box>
+                                                </CheckboxCard.Control>
+                                            </CheckboxCard.Root>
+                                        );
+                                    })}
+                                </Stack>
+                            </CheckboxGroup>
 
-                                        {/* Progress broken into v3 compound components [4] */}
-                                        <Progress.Root
-                                            mt="2"
-                                            value={percent}
-                                            size="sm"
-                                            borderRadius="md"
-                                            colorPalette="blue"
-                                        >
-                                            <Progress.Track>
-                                                <Progress.Range />
-                                            </Progress.Track>
-                                        </Progress.Root>
-
-                                    </Box>
-
-                                );
-                            })}
+                            {/* OPTION SUGGESTIONS SECTION */}
                             {isActive && poll.allowUserOptions && (
-                                <>
-                                    <input
+                                <Stack gap="3" mt="2" p="3" border="1px solid" borderColor="border.muted" borderRadius="md">
+                                    <Text fontSize="sm" fontWeight="medium">Suggest a Movie Option:</Text>
+                                    <Input
                                         value={newTitle}
                                         onChange={(e) => setNewTitle(e.target.value)}
                                         placeholder="Movie title..."
-                                        className="border p-2 rounded w-full"
+                                        size="sm"
                                     />
 
-                                    <input
+                                    <Input
                                         value={newLink}
                                         onChange={(e) => setNewLink(e.target.value)}
                                         placeholder="Streaming link..."
-                                        className="border p-2 rounded w-full mt-2"
+                                        size="sm"
                                     />
 
-
                                     {error && (
-                                        <Text color="red.500" fontSize="sm" mt="2">
+                                        <Text color="red.500" fontSize="xs">
                                             {error}
                                         </Text>
                                     )}
 
-                                    <Button colorScheme="blue" onClick={handleAddOption}>
-                                        Add
+                                    <Button colorPalette="blue" size="sm" onClick={handleAddOption}>
+                                        Add Suggestion
                                     </Button>
-                                </>
+                                </Stack>
                             )}
 
+                            {/* SUBMIT BUTTON */}
+                            <Button
+                                colorPalette="purple"
+                                size="lg"
+                                onClick={castVotes}
+                                loading={isSubmitting}
+                                disabled={selectableOptions.length === 0 || !isActive}
+                                mt="4"
+                            >
+                                Cast Selected Vote(s) ({selectableOptions.length})
+                            </Button>
                         </Stack>
 
-                        <Text textAlign="center" color="fg.muted" fontSize="sm">
+                        <Text textAlign="center" color="fg.muted" fontSize="sm" mt="4">
                             Total votes: {totalVotes}
                         </Text>
-                    </Stack>
+                    </Card.Body>
                 </Card.Root>
             </Presence>
         </Container>

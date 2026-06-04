@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 export const runtime = 'edge';
 
 // The interests of your Discord server
-const KEYWORDS = ["python", "c++", "cybersecurity", "claude", "rpg", "unreal", "unity"]; 
+const KEYWORDS = ["python", "c++", "cybersecurity", "claude", "rpg", "unreal", "unity"];
 const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL!;
 
 // Initialize Supabase
@@ -22,13 +22,13 @@ export async function GET(request: Request) {
 
   try {
     // 2. The Extraction (From Iteration 8)
-    const url = 'https://www.humblebundle.com/bundles'; 
+    const url = 'https://www.humblebundle.com/bundles';
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'text/html',
       },
-      next: { revalidate: 0 } 
+      next: { revalidate: 0 }
     });
 
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -45,7 +45,7 @@ export async function GET(request: Request) {
 
     categories.forEach(category => {
       if (rawData.data && rawData.data[category] && rawData.data[category].mosaic) {
-         activeBundles.push(...rawData.data[category].mosaic[0].products);
+        activeBundles.push(...rawData.data[category].mosaic[0].products);
       }
     });
 
@@ -56,7 +56,7 @@ export async function GET(request: Request) {
       const machineName = bundle.machine_name;
       const title = bundle.tile_short_name || bundle.tile_name;
       const link = `https://www.humblebundle.com${bundle.product_url}`;
-      
+
       // A. Keyword Matching
       const searchText = `${title} ${machineName}`.toLowerCase();
       const isMatch = KEYWORDS.some(keyword => {
@@ -93,13 +93,16 @@ export async function GET(request: Request) {
 
       // D. Save to Supabase to prevent duplicates tomorrow
       await supabase.from('seen_bundles').insert([{ id: machineName }]);
-      
+
       newDealsAlerted++;
     }
 
     return NextResponse.json({ success: true, newDealsAlerted });
 
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (err) {
+
+    const message = err instanceof Error ? err.message : "Unknown error";
+
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }

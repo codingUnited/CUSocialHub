@@ -1,1 +1,34 @@
-[]
+[
+  {
+    "id": "290a918f-4249-4e92-8a4c-1b7c269e7f8d",
+    "title": "test",
+    "description": "",
+    "options": [
+      {
+        "id": "opt-1",
+        "label": "",
+        "votes": 1
+      },
+      {
+        "id": "opt-2",
+        "label": "Black Phone | Netflix",
+        "votes": 1
+      },
+      {
+        "id": "opt-3",
+        "label": "Black Phone 2 | Netflix",
+        "votes": 1
+      },
+      {
+        "id": "opt-4",
+        "label": "| Netflix",
+        "votes": 1
+      }
+    ],
+    "startDate": "2026-06-04T17:00:00.000Z",
+    "endDate": "2026-06-05T17:00:00.000Z",
+    "status": "open",
+    "allowUserOptions": true,
+    "timezone": "UTC"
+  }
+]

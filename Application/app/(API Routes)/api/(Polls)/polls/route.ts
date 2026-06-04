@@ -16,14 +16,14 @@ export async function GET() {
 
 // Create a new poll
 export async function POST(req: NextRequest) {
-    const { key } = await req.json();
+    // const { key } = await req.json();
 
-    if (key !== process.env.POLL_CREATION_KEY) {
-        return NextResponse.json(
-            { success: false, error: "Unauthorized poll creation." },
-            { status: 403 }
-        );
-    }
+    // // if (key !== process.env.POLL_CREATION_KEY) {
+    // //     return NextResponse.json(
+    // //         { success: false, error: "Unauthorized poll creation." },
+    // //         { status: 403 }
+    // //     );
+    // // }
 
     const body = await req.json();
     const created = await manager.createPoll(body);

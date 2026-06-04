@@ -41,35 +41,38 @@ export default function AddOptionPage({ params }: { params: { id: string } }) {
 
     return (
         <Container maxW="md" py="12">
-            <Card p="6" shadow="lg" borderRadius="xl">
-                <Stack gap="5">
-                    <Heading size="lg">Add an Option</Heading>
+            <Card.Root p="6" shadow="lg" borderRadius="xl">
+                <Card.Body>
+                    <Stack gap="5">
+                        <Heading size="lg">Add an Option</Heading>
 
-                    <Text color="fg.muted">
-                        Add a new option to this poll. Make sure it’s clear and unique.
-                    </Text>
-
-                    <Input
-                        placeholder="Enter your option..."
-                        value={value}
-                        onChange={(e) => setValue(e.target.value)}
-                    />
-
-                    {error && (
-                        <Text color="red.400" fontSize="sm">
-                            {error}
+                        <Text color="fg.muted">
+                            Add a new option to this poll. Make sure it's clear and unique.
                         </Text>
-                    )}
 
-                    <Button colorScheme="blue" onClick={submit}>
-                        Add Option
-                    </Button>
+                        <Input
+                            placeholder="Enter your option..."
+                            value={value}
+                            onChange={(e) => setValue(e.target.value)}
+                        />
 
-                    <Button variant="ghost" onClick={() => router.push(`/polls/${pollId}`)}>
-                        Back to Poll
-                    </Button>
-                </Stack>
-            </Card>
+                        {error && (
+                            <Text color="red.400" fontSize="sm">
+                                {error}
+                            </Text>
+                        )}
+
+                        <Button colorScheme="blue" onClick={submit}>
+                            Add Option
+                        </Button>
+
+                        <Button variant="ghost" onClick={() => router.push(`/polls/${pollId}`)}>
+                            Back to Poll
+                        </Button>
+                    </Stack>
+                </Card.Body>
+
+            </Card.Root>
         </Container>
     );
 }
